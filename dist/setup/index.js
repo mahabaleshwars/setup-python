@@ -70164,15 +70164,30 @@ function findReleaseFromManifest(semanticVersionSpec, architecture, manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!manifest) {
             manifest = yield getManifest();
+            core.debug('manifest: ' + manifest);
         }
         const foundRelease = yield tc.findFromManifest(semanticVersionSpec, false, manifest, architecture);
+        core.debug(`Found release: ${foundRelease}`);
         return foundRelease;
     });
 }
 exports.findReleaseFromManifest = findReleaseFromManifest;
 function getManifest() {
-    core.debug(`Getting manifest from ${MANIFEST_REPO_OWNER}/${MANIFEST_REPO_NAME}@${MANIFEST_REPO_BRANCH}`);
-    return tc.getManifestFromRepo(MANIFEST_REPO_OWNER, MANIFEST_REPO_NAME, AUTH, MANIFEST_REPO_BRANCH);
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug(`Getting manifest from ${MANIFEST_REPO_OWNER}/${MANIFEST_REPO_NAME}@${MANIFEST_REPO_BRANCH}`);
+        try {
+            const manifest = yield tc.getManifestFromRepo(MANIFEST_REPO_OWNER, MANIFEST_REPO_NAME, AUTH, MANIFEST_REPO_BRANCH);
+            core.debug(`Successfully fetched manifest: ${JSON.stringify(manifest)}`);
+            return manifest;
+        }
+        catch (error) {
+            core.debug('Failed to fetch manifest from the repo.');
+            if (error instanceof Error) {
+                core.debug(error.message);
+            }
+            throw error;
+        }
+    });
 }
 exports.getManifest = getManifest;
 function installPython(workingDirectory) {

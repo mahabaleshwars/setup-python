@@ -19,6 +19,7 @@ export async function findReleaseFromManifest(
 ): Promise<tc.IToolRelease | undefined> {
   if (!manifest) {
     manifest = await getManifest();
+    core.debug('manifest: ' + manifest);
   }
 
   const foundRelease = await tc.findFromManifest(
@@ -27,20 +28,30 @@ export async function findReleaseFromManifest(
     manifest,
     architecture
   );
-
+  core.debug(`Found release: ${foundRelease}`);
   return foundRelease;
 }
 
-export function getManifest(): Promise<tc.IToolRelease[]> {
+export async function getManifest(): Promise<tc.IToolRelease[]> {
   core.debug(
     `Getting manifest from ${MANIFEST_REPO_OWNER}/${MANIFEST_REPO_NAME}@${MANIFEST_REPO_BRANCH}`
   );
-  return tc.getManifestFromRepo(
-    MANIFEST_REPO_OWNER,
-    MANIFEST_REPO_NAME,
-    AUTH,
-    MANIFEST_REPO_BRANCH
-  );
+  try {
+    const manifest = await tc.getManifestFromRepo(
+      MANIFEST_REPO_OWNER,
+      MANIFEST_REPO_NAME,
+      AUTH,
+      MANIFEST_REPO_BRANCH
+    );
+    core.debug(`Successfully fetched manifest: ${JSON.stringify(manifest)}`);
+    return manifest;
+  } catch (error) {
+    core.debug('Failed to fetch manifest from the repo.');
+    if (error instanceof Error) {
+      core.debug(error.message);
+    }
+    throw error;
+  }
 }
 
 async function installPython(workingDirectory: string) {
