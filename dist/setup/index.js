@@ -92180,7 +92180,9 @@ function getVersionInputFromToolVersions(versionFile) {
             if (line.trim().startsWith('#')) {
                 continue;
             }
-            const match = line.match(/^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/);
+            const match = line.match(/^python\s*v?(?<version>[^\s]+(?:[-<>=!]+[^\s]+)*)\s*(?:-\s*(?<range_version>[^\s]+(?:[-<>=!]+[^\s]+)*))?\s*$/
+            // /^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/
+            );
             if (match) {
                 return [((_a = match.groups) === null || _a === void 0 ? void 0 : _a.version) || ''];
             }
