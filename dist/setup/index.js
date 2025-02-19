@@ -92175,9 +92175,13 @@ function getVersionInputFromToolVersions(versionFile) {
         const lines = fileContents.split('\n');
         const versions = [];
         for (const line of lines) {
+            // Skip commented lines
+            if (line.trim().startsWith('#')) {
+                continue;
+            }
             const match = line.match(/^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/);
             if (match) {
-                versions.push(match[1]);
+                return [`${match[1]}-${match[2]}`];
             }
         }
         if (versions.length === 0) {
