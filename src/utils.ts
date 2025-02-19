@@ -289,7 +289,7 @@ export function getVersionInputFromToolVersions(versionFile: string): string[] {
         /^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/
       );
       if (match) {
-        return [`${match[1]}-${match[2]}`];
+        return [match.groups?.version || ''];
       }
     }
 

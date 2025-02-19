@@ -273,6 +273,16 @@ steps:
 - run: python my_script.py
 ```
 
+
+```.tool-versions
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-python@v5
+  with:
+    python-version-file: '.tool-versions' # Read python version from a file.tool-versions
+- run: python my_script.py
+```
+
 ## Check latest version
 
 The `check-latest` flag defaults to `false`. Use the default or set `check-latest` to `false` if you prefer stability and if you want to ensure a specific `Python or PyPy` version is always used.

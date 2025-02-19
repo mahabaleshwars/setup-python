@@ -92166,6 +92166,7 @@ function getVersionInputFromPlainFile(versionFile) {
 }
 exports.getVersionInputFromPlainFile = getVersionInputFromPlainFile;
 function getVersionInputFromToolVersions(versionFile) {
+    var _a;
     if (!fs_1.default.existsSync(versionFile)) {
         core.warning(`File ${versionFile} does not exist.`);
         return [];
@@ -92181,7 +92182,7 @@ function getVersionInputFromToolVersions(versionFile) {
             }
             const match = line.match(/^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/);
             if (match) {
-                return [`${match[1]}-${match[2]}`];
+                return [((_a = match.groups) === null || _a === void 0 ? void 0 : _a.version) || ''];
             }
         }
         if (versions.length === 0) {
