@@ -5,6 +5,7 @@ import * as exec from '@actions/exec';
 import * as httpm from '@actions/http-client';
 import {ExecOptions} from '@actions/exec/lib/interfaces';
 import {IS_WINDOWS, IS_LINUX, getDownloadFileName} from './utils';
+import {json} from 'stream/consumers';
 
 const TOKEN = core.getInput('token');
 const AUTH = !TOKEN ? undefined : `token ${TOKEN}`;
@@ -34,7 +35,10 @@ export async function findReleaseFromManifest(
 
 export async function getManifest(): Promise<tc.IToolRelease[]> {
   try {
-    return await getManifestFromRepo();
+    const manifestResponse = await getManifestFromRepo();
+    core.debug('Manifest Response: ' + JSON.stringify(manifestResponse));
+
+    return manifestResponse;
   } catch (err) {
     core.debug('Fetching the manifest via the API failed.');
     if (err instanceof Error) {

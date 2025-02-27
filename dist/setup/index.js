@@ -100159,7 +100159,9 @@ exports.findReleaseFromManifest = findReleaseFromManifest;
 function getManifest() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            return yield getManifestFromRepo();
+            const manifestResponse = yield getManifestFromRepo();
+            core.debug('Manifest Response: ' + JSON.stringify(manifestResponse));
+            return manifestResponse;
         }
         catch (err) {
             core.debug('Fetching the manifest via the API failed.');
