@@ -100321,7 +100321,7 @@ function getManifest() {
                     "version": "3.13.0",
                     "stable": true,
                     "release_url": "https://github.com/actions/python-versions/releases/tag/3.13.0-11228081754",
-                    "files": [
+                    "files2": [
                         {
                             "filename": "python-3.13.0-darwin-arm64.tar.gz",
                             "arch": "arm64",
