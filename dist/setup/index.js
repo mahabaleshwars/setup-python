@@ -100183,13 +100183,13 @@ function getManifest() {
             }
         }
         catch (err) {
-            core.debug('Fetching the manifest via the API failed.');
+            core.error('Fetching the manifest via the API failed.');
             if (err instanceof Error) {
-                core.debug(`Error message: ${err.message}`);
-                core.debug(`Error stack: ${err.stack}`);
+                core.error(`Error message: ${err.message}`);
+                core.error(`Error stack: ${err.stack}`);
             }
             else {
-                core.debug('Error is not an instance of Error. It might be something else.');
+                core.error('Error is not an instance of Error. It might be something else.');
             }
         }
         return yield getManifestFromURL();
