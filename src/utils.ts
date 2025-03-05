@@ -278,7 +278,6 @@ export function getVersionInputFromToolVersions(versionFile: string): string[] {
   try {
     const fileContents = fs.readFileSync(versionFile, 'utf8');
     const lines = fileContents.split('\n');
-    const versions: string[] = [];
 
     for (const line of lines) {
       // Skip commented lines
@@ -293,11 +292,8 @@ export function getVersionInputFromToolVersions(versionFile: string): string[] {
       }
     }
 
-    if (versions.length === 0) {
-      core.warning(`No Python version found in ${versionFile}`);
-    }
-
-    return versions;
+    core.warning(`No Python version found in ${versionFile}`);
+    return [];
   } catch (error) {
     core.error(`Error reading ${versionFile}: ${(error as Error).message}`);
     return [];
