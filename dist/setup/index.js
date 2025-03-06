@@ -92025,7 +92025,11 @@ function validatePythonVersionFormatForPyPy(version) {
 exports.validatePythonVersionFormatForPyPy = validatePythonVersionFormatForPyPy;
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
-    return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+    const hostname = ghUrl.hostname.trimEnd().toUpperCase();
+    const isGitHubHost = hostname === 'GITHUB.COM';
+    const isGitHubEnterpriseCloudHost = hostname.endsWith('.GHE.COM');
+    const isLocalHost = hostname.endsWith('.LOCALHOST');
+    return !isGitHubHost && !isGitHubEnterpriseCloudHost && !isLocalHost;
 }
 exports.isGhes = isGhes;
 function isCacheFeatureAvailable() {
@@ -92126,7 +92130,9 @@ function extractValue(obj, keys) {
  */
 function getVersionInputFromTomlFile(versionFile) {
     core.debug(`Trying to resolve version form ${versionFile}`);
-    const pyprojectFile = fs_1.default.readFileSync(versionFile, 'utf8');
+    let pyprojectFile = fs_1.default.readFileSync(versionFile, 'utf8');
+    // Normalize the line endings in the pyprojectFile
+    pyprojectFile = pyprojectFile.replace(/\r\n/g, '\n');
     const pyprojectConfig = toml.parse(pyprojectFile);
     let keys = [];
     if ('project' in pyprojectConfig) {
@@ -92165,6 +92171,9 @@ function getVersionInputFromPlainFile(versionFile) {
     return [version];
 }
 exports.getVersionInputFromPlainFile = getVersionInputFromPlainFile;
+/**
+ * Python version extracted from a .tool-versions file.
+ */
 function getVersionInputFromToolVersions(versionFile) {
     var _a;
     if (!fs_1.default.existsSync(versionFile)) {
@@ -92179,9 +92188,9 @@ function getVersionInputFromToolVersions(versionFile) {
             if (line.trim().startsWith('#')) {
                 continue;
             }
-            const match = line.match(/^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/);
+            const match = line.match(/^\s*python\s*v?\s*(?<version>[^\s]+)\s*$/);
             if (match) {
-                return [((_a = match.groups) === null || _a === void 0 ? void 0 : _a.version) || ''];
+                return [((_a = match.groups) === null || _a === void 0 ? void 0 : _a.version.trim()) || ''];
             }
         }
         core.warning(`No Python version found in ${versionFile}`);
@@ -92194,7 +92203,7 @@ function getVersionInputFromToolVersions(versionFile) {
 }
 exports.getVersionInputFromToolVersions = getVersionInputFromToolVersions;
 /**
- * Python version extracted from a plain or TOML file.
+ * Python version extracted from a plain, .tool-versions or TOML file.
  */
 function getVersionInputFromFile(versionFile) {
     if (versionFile.endsWith('.toml')) {

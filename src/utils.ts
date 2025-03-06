@@ -116,7 +116,13 @@ export function isGhes(): boolean {
   const ghUrl = new URL(
     process.env['GITHUB_SERVER_URL'] || 'https://github.com'
   );
-  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+
+  const hostname = ghUrl.hostname.trimEnd().toUpperCase();
+  const isGitHubHost = hostname === 'GITHUB.COM';
+  const isGitHubEnterpriseCloudHost = hostname.endsWith('.GHE.COM');
+  const isLocalHost = hostname.endsWith('.LOCALHOST');
+
+  return !isGitHubHost && !isGitHubEnterpriseCloudHost && !isLocalHost;
 }
 
 export function isCacheFeatureAvailable(): boolean {
@@ -224,7 +230,10 @@ function extractValue(obj: any, keys: string[]): string | undefined {
 export function getVersionInputFromTomlFile(versionFile: string): string[] {
   core.debug(`Trying to resolve version form ${versionFile}`);
 
-  const pyprojectFile = fs.readFileSync(versionFile, 'utf8');
+  let pyprojectFile = fs.readFileSync(versionFile, 'utf8');
+  // Normalize the line endings in the pyprojectFile
+  pyprojectFile = pyprojectFile.replace(/\r\n/g, '\n');
+
   const pyprojectConfig = toml.parse(pyprojectFile);
   let keys = [];
 
@@ -269,6 +278,9 @@ export function getVersionInputFromPlainFile(versionFile: string): string[] {
   return [version];
 }
 
+/**
+ * Python version extracted from a .tool-versions file.
+ */
 export function getVersionInputFromToolVersions(versionFile: string): string[] {
   if (!fs.existsSync(versionFile)) {
     core.warning(`File ${versionFile} does not exist.`);
@@ -284,15 +296,14 @@ export function getVersionInputFromToolVersions(versionFile: string): string[] {
       if (line.trim().startsWith('#')) {
         continue;
       }
-      const match = line.match(
-        /^python\s*v?(?<version>[^\s]+(?:\s*[-<>=!]+[^\s]+)*)\s*(-\s([^\s].*))?\s*$/
-      );
+      const match = line.match(/^\s*python\s*v?\s*(?<version>[^\s]+)\s*$/);
       if (match) {
-        return [match.groups?.version || ''];
+        return [match.groups?.version.trim() || ''];
       }
     }
 
     core.warning(`No Python version found in ${versionFile}`);
+
     return [];
   } catch (error) {
     core.error(`Error reading ${versionFile}: ${(error as Error).message}`);
@@ -300,7 +311,7 @@ export function getVersionInputFromToolVersions(versionFile: string): string[] {
   }
 }
 /**
- * Python version extracted from a plain or TOML file.
+ * Python version extracted from a plain, .tool-versions or TOML file.
  */
 export function getVersionInputFromFile(versionFile: string): string[] {
   if (versionFile.endsWith('.toml')) {
