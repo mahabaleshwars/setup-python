@@ -93,6 +93,10 @@ async function run() {
     const checkLatest = core.getBooleanInput('check-latest');
     const allowPreReleases = core.getBooleanInput('allow-prereleases');
     const freethreaded = core.getBooleanInput('freethreaded');
+    const includeDebug = core.getBooleanInput('include-debug');
+    const includeDev = core.getBooleanInput('include-dev');
+    const includeLib = core.getBooleanInput('include-lib');
+    const compileAll = core.getBooleanInput('compile-all');
 
     if (versions.length) {
       let pythonVersion = '';
@@ -134,7 +138,11 @@ async function run() {
             updateEnvironment,
             checkLatest,
             allowPreReleases,
-            freethreaded
+            freethreaded,
+            includeDebug,
+            includeDev,
+            includeLib,
+            compileAll
           );
           pythonVersion = installed.version;
           core.info(`Successfully set up ${installed.impl} (${pythonVersion})`);

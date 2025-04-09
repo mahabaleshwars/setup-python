@@ -31,13 +31,7 @@ function binDir(installDir: string): string {
 }
 
 export async function useCpythonVersion(
-  version: string,
-  architecture: string,
-  updateEnvironment: boolean,
-  checkLatest: boolean,
-  allowPreReleases: boolean,
-  freethreaded: boolean
-): Promise<InstalledVersion> {
+version: string, architecture: string, updateEnvironment: boolean, checkLatest: boolean, allowPreReleases: boolean, freethreaded: boolean, includeDebug?: boolean, includeDev?: boolean, includeLib?: boolean, compileAll?: boolean): Promise<InstalledVersion> {
   let manifest: tc.IToolRelease[] | null = null;
   const {version: desugaredVersionSpec, freethreaded: versionFreethreaded} =
     desugarVersion(version);

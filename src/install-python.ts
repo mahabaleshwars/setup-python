@@ -68,6 +68,12 @@ export async function getManifestFromURL(): Promise<tc.IToolRelease[]> {
 }
 
 async function installPython(workingDirectory: string) {
+  const includeDebug = core.getInput('include-debug') === 'true';
+  const includeDev = core.getInput('include-dev') === 'true';
+  const includeLib = core.getInput('include-lib') === 'true';
+  const compileAll = core.getInput('compile-all') === 'true';
+  const targetDir = core.getInput('target-dir') || path.join(workingDirectory, 'Python');
+
   const options: ExecOptions = {
     cwd: workingDirectory,
     env: {
@@ -86,7 +92,21 @@ async function installPython(workingDirectory: string) {
   };
 
   if (IS_WINDOWS) {
+    const args = [
+      '/quiet',
+      `Include_debug=${includeDebug ? 1 : 0}`,
+      `Include_dev=${includeDev ? 1 : 0}`,
+      `Include_lib=${includeLib ? 1 : 0}`,
+      `CompileAll=${compileAll ? 1 : 0}`,
+      `TargetDir=${targetDir}`
+    ];
+    core.info(`Running Python installer with arguments: ${args.join(' ')}`);
+
     await exec.exec('powershell', ['./setup.ps1'], options);
+  //   await exec.exec('setup.exe', args, options);
+  // } else {
+  //   throw new Error('Advanced installation options are only supported on Windows.');
+  // }
   } else {
     await exec.exec('bash', ['./setup.sh'], options);
   }
