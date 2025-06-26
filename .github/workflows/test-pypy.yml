@@ -21,7 +21,15 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          [macos-latest, windows-latest, ubuntu-20.04, ubuntu-latest, macos-13]
+          [
+            macos-latest,
+            windows-latest,
+            ubuntu-22.04,
+            ubuntu-22.04-arm,
+            ubuntu-24.04-arm,
+            ubuntu-latest,
+            macos-13
+          ]
         pypy:
           - 'pypy-2.7'
           - 'pypy-3.10'
@@ -34,6 +42,7 @@ jobs:
           - 'pypy-2.7-v7.3.12rc1'
           - 'pypy-3.10-nightly'
           - 'pypy3.10-v7.3.17'
+          - 'pypy3.11-v7.3.19'
 
     steps:
       - name: Checkout
@@ -79,14 +88,13 @@ jobs:
           - macos-13
           - macos-14
           - macos-15
-          - windows-2019
           - windows-2022
           - windows-2025
           - ubuntu-22.04
           - ubuntu-24.04
           - ubuntu-22.04-arm
           - ubuntu-24.04-arm
-        pypy: ['pypy-2.7', 'pypy-3.10']
+        pypy: ['pypy-2.7', 'pypy-3.10', 'pypy-3.11']
 
     steps:
       - name: Checkout
@@ -129,8 +137,16 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          [macos-latest, windows-latest, ubuntu-20.04, ubuntu-latest, macos-13]
-        pypy: ['pypy2.7', 'pypy3.9', 'pypy3.10-nightly']
+          [
+            macos-latest,
+            windows-latest,
+            ubuntu-22.04,
+            ubuntu-22.04-arm,
+            ubuntu-24.04-arm,
+            ubuntu-latest,
+            macos-13
+          ]
+        pypy: ['pypy2.7', 'pypy3.9', 'pypy3.10-nightly', 'pypy3.11']
 
     steps:
       - name: Checkout
@@ -154,13 +170,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        os:
+          [
+            macos-latest,
+            windows-latest,
+            ubuntu-22.04,
+            ubuntu-22.04-arm,
+            ubuntu-24.04-arm,
+            ubuntu-latest,
+            macos-13
+          ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup PyPy and check latest
         uses: ./
         with:
-          python-version: 'pypy-3.10-v7.3.x'
+          python-version: 'pypy-3.11-v7.3.x'
           check-latest: true
       - name: PyPy and Python version
         run: python --version
@@ -176,7 +201,7 @@ jobs:
 
       - name: Assert expected binaries (or symlinks) are present
         run: |
-          EXECUTABLE="pypy-3.10-v7.3.x"
+          EXECUTABLE="pypy-3.11-v7.3.x"
           EXECUTABLE=${EXECUTABLE/-/}  # remove the first '-' in "pypy-X.Y" -> "pypyX.Y" to match executable name
           EXECUTABLE=${EXECUTABLE%%-*}  # remove any -* suffixe
           ${EXECUTABLE} --version
@@ -187,13 +212,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        os:
+          [
+            macos-latest,
+            windows-latest,
+            ubuntu-22.04,
+            ubuntu-22.04-arm,
+            ubuntu-24.04-arm,
+            ubuntu-latest,
+            macos-13
+          ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup PyPy and check latest
         uses: ./
         with:
           python-version: |
+            pypy-3.11-v7.3.x
             pypy-3.10-v7.3.x
             pypy3.9
           check-latest: true
@@ -211,7 +246,7 @@ jobs:
 
       - name: Assert expected binaries (or symlinks) are present
         run: |
-          EXECUTABLE="pypy-3.10-v7.3.x"
+          EXECUTABLE="pypy-3.11-v7.3.x"
           EXECUTABLE=${EXECUTABLE/-/}  # remove the first '-' in "pypy-X.Y" -> "pypyX.Y" to match executable name
           EXECUTABLE=${EXECUTABLE%%-*}  # remove any -* suffixe
           ${EXECUTABLE} --version
