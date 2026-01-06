@@ -7701,7 +7701,7 @@ exports.create = create;
  *
  * @param patterns  Patterns separated by newlines
  * @param currentWorkspace  Workspace used when matching files
- * @param options   Glob options
+ * @param options   Hash file options (now supports roots, allowFilesOutsideWorkspace, exclude)
  * @param verbose   Enables verbose logging
  */
 function hashFiles(patterns, currentWorkspace = '', options, verbose = false) {
@@ -7710,8 +7710,10 @@ function hashFiles(patterns, currentWorkspace = '', options, verbose = false) {
         if (options && typeof options.followSymbolicLinks === 'boolean') {
             followSymbolicLinks = options.followSymbolicLinks;
         }
+        // Pass all options through to _hashFiles, including new ones (roots, allowFilesOutsideWorkspace, exclude)
         const globber = yield create(patterns, { followSymbolicLinks });
-        return (0, internal_hash_files_1.hashFiles)(globber, currentWorkspace, verbose);
+        // _hashFiles should be updated to use options.roots, options.allowFilesOutsideWorkspace, options.exclude
+        return (0, internal_hash_files_1.hashFiles)(globber, currentWorkspace, options, verbose);
     });
 }
 exports.hashFiles = hashFiles;
@@ -8094,49 +8096,106 @@ const fs = __importStar(__nccwpck_require__(9896));
 const stream = __importStar(__nccwpck_require__(2203));
 const util = __importStar(__nccwpck_require__(9023));
 const path = __importStar(__nccwpck_require__(6928));
-function hashFiles(globber, currentWorkspace, verbose = false) {
+/**
+ * Symlink Protection: Checks if the realpath of file is inside any of the realpaths of roots.
+ * Prevents files escaping via symlink traversal.
+ */
+function isInResolvedRoots(resolvedFile, resolvedRoots) {
+    // Ensure normalized path comparison with trailing separator
+    return resolvedRoots.some(root => resolvedFile.startsWith(root + path.sep));
+}
+function isExcluded(file, excludePatterns) {
+    const basename = path.basename(file);
+    return excludePatterns.some(pattern => {
+        if (pattern.startsWith('*.')) {
+            return basename.endsWith(pattern.slice(1));
+        }
+        return basename === pattern;
+    });
+}
+function hashFiles(globber, currentWorkspace, options, verbose = false) {
     var _a, e_1, _b, _c;
-    var _d;
+    var _d, _e, _f, _g;
     return __awaiter(this, void 0, void 0, function* () {
         const writeDelegate = verbose ? core.info : core.debug;
         let hasMatch = false;
+        // Determine roots for inclusion (default to currentWorkspace)
         const githubWorkspace = currentWorkspace
             ? currentWorkspace
             : (_d = process.env['GITHUB_WORKSPACE']) !== null && _d !== void 0 ? _d : process.cwd();
+        const roots = (_e = options === null || options === void 0 ? void 0 : options.roots) !== null && _e !== void 0 ? _e : [githubWorkspace];
+        const allowOutside = (_f = options === null || options === void 0 ? void 0 : options.allowFilesOutsideWorkspace) !== null && _f !== void 0 ? _f : false;
+        const excludePatterns = (_g = options === null || options === void 0 ? void 0 : options.exclude) !== null && _g !== void 0 ? _g : [];
+        // Symlink Protection: resolve all roots up front
+        let resolvedRoots = [];
+        try {
+            resolvedRoots = roots.map(root => fs.realpathSync(root));
+        }
+        catch (err) {
+            core.warning(`Could not check workspace location: ${err}`);
+            return '';
+        }
+        const outsideRootFiles = [];
         const result = crypto.createHash('sha256');
         let count = 0;
         try {
-            for (var _e = true, _f = __asyncValues(globber.globGenerator()), _g; _g = yield _f.next(), _a = _g.done, !_a; _e = true) {
-                _c = _g.value;
-                _e = false;
+            for (var _h = true, _j = __asyncValues(globber.globGenerator()), _k; _k = yield _j.next(), _a = _k.done, !_a; _h = true) {
+                _c = _k.value;
+                _h = false;
                 const file = _c;
                 writeDelegate(file);
-                if (!file.startsWith(`${githubWorkspace}${path.sep}`)) {
-                    writeDelegate(`Ignore '${file}' since it is not under GITHUB_WORKSPACE.`);
+                // Exclude matching patterns
+                if (isExcluded(file, excludePatterns)) {
+                    writeDelegate(`Exclude '${file}' (pattern match).`);
                     continue;
                 }
-                if (fs.statSync(file).isDirectory()) {
+                // Symlink Protection: resolve real path of the file
+                let resolvedFile;
+                try {
+                    resolvedFile = fs.realpathSync(file);
+                }
+                catch (err) {
+                    core.warning(`Could not read "${file}". Please check symlinks and file access. Details: ${err}`);
+                    continue; // skip if unable to resolve symlink
+                }
+                // Check if in resolved roots
+                if (!isInResolvedRoots(resolvedFile, resolvedRoots)) {
+                    outsideRootFiles.push(file);
+                    if (allowOutside) {
+                        writeDelegate(`Including '${file}' since it is outside the allowed workspace root(s) and 'allowFilesOutsideWorkspace' is enabled.`);
+                        // continue to hashing
+                    }
+                    else {
+                        writeDelegate(`Ignore '${file}' since it is not under allowed workspace root(s).`);
+                        continue;
+                    }
+                }
+                if (fs.statSync(resolvedFile).isDirectory()) {
                     writeDelegate(`Skip directory '${file}'.`);
                     continue;
                 }
                 const hash = crypto.createHash('sha256');
                 const pipeline = util.promisify(stream.pipeline);
-                yield pipeline(fs.createReadStream(file), hash);
+                yield pipeline(fs.createReadStream(resolvedFile), hash);
                 result.write(hash.digest());
                 count++;
-                if (!hasMatch) {
-                    hasMatch = true;
-                }
+                hasMatch = true;
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (!_e && !_a && (_b = _f.return)) yield _b.call(_f);
+                if (!_h && !_a && (_b = _j.return)) yield _b.call(_j);
             }
             finally { if (e_1) throw e_1.error; }
         }
         result.end();
+        // fail if any files outside root found without opt-in
+        if (!allowOutside && outsideRootFiles.length > 0) {
+            throw new Error(`Some files are outside your workspace:\n` +
+                outsideRootFiles.map(f => `- ${f}`).join('\n') +
+                `\nTo include them, set 'allowFilesOutsideWorkspace: true' in your options.`);
+        }
         if (hasMatch) {
             writeDelegate(`Found ${count} files to hash.`);
             return result.digest('hex');
