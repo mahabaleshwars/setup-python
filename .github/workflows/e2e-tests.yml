@@ -80,7 +80,7 @@ jobs:
         
       - name: Run python-path sample 3.13
         run: pipx run --python '${{ steps.cp313.outputs.python-path }}' nox --version
-        shell: pwsh
+        shell: bash
         env:
           PIPX_HOME: '${{ runner.temp }}/pipx'
           PIPX_BIN_DIR: '${{ runner.temp }}/pipx/bin'
